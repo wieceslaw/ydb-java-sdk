@@ -128,6 +128,54 @@ public class OptionalVariantTest {
     }
 
     @Test
+    public void testOptionalVariants() {
+        // Optional<Optional<Variant<Uint32, Optional<Uint64>>>>
+        String extepectedType = ""
+                + "optional_type {"
+                + "  item {"
+                + "    optional_type {"
+                + "      item {"
+                + "        variant_type {"
+                + "          tuple_items {"
+                + "            elements {"
+                + "              type_id: UINT32"
+                + "            }"
+                + "            elements {"
+                + "              optional_type {"
+                + "                item {"
+                + "                  type_id: UINT64"
+                + "                }"
+                + "              }"
+                + "            }"
+                + "          }"
+                + "        }"
+                + "      }"
+                + "    }"
+                + "  }"
+                + "}";
+
+        executeRawQuery("select Nothing(ParseType('Variant<Uint32, Uint64?>??'));")
+                .isType(extepectedType)
+                .isValue("null_flag_value:NULL_VALUE");
+
+        executeRawQuery("select Just(Nothing(ParseType('Variant<Uint32, Uint64?>?')));")
+                .isType(extepectedType)
+                .isValue("nested_value { null_flag_value:NULL_VALUE }");
+
+        executeRawQuery("select Just(Just(Variant(127, '0', ParseType('Variant<Uint32, Uint64?>'))));")
+                .isType(extepectedType)
+                .isValue("nested_value { uint32_value: 127 }");
+
+        executeRawQuery("select Just(Just(Variant(Just(127), '1', ParseType('Variant<Uint32, Uint64?>'))));")
+                .isType(extepectedType)
+                .isValue("nested_value { uint64_value:127 } variant_index:1");
+
+        executeRawQuery("select Just(Just(Variant(Nothing(Uint64?), '1', ParseType('Variant<Uint32, Uint64?>'))));")
+                .isType(extepectedType)
+                .isValue("nested_value { null_flag_value:NULL_VALUE } variant_index:1");
+    }
+
+    @Test
     public void testSuperVariants() {
         // Optional<Optional<Variant(Optional<String>, Optional<Int32>)>>
         String expectedType = ""
